@@ -2,11 +2,15 @@
 # https://archive.ics.uci.edu/ml/datasets/Student+Performance
 
 library(caret)
+library(rpart)
+library(rpart.plot)
+library(pROC)
+
 
 Xtt <- read.csv("student-mat.csv", header = TRUE, stringsAsFactors = TRUE, sep = ";")
 
 Xtt$G3_cate <- unlist(sapply(Xtt$G3, function(x){
-    if(x <= 10) return("Fail")
+    if(x < 10) return("Fail")
     else return("Pass")
 }))
 
@@ -35,13 +39,9 @@ Xtrain_small <- Xtrain[sample(seq(nrow(Xtrain)), 100),]
 
 # ====
 
-tr0 <- tree(data = cbind(Xtrain, ytrain), ytrain~., control = tree.control(nobs = nrow(Xtrain), minsize = 5))
-plot(tr0)
-text(tr0)
-
 
 tr0 <- rpart(data = cbind(Xtrain, ytrain), ytrain~.)
-plot(tr0)
+rpart.plot(tr0)
 text(tr0)
 
 
@@ -53,6 +53,7 @@ print(tr0_acc <- sum(diag(tr0_tb)) / sum(tr0_tb))
 tr0_pred_prob <- predict(tr0, newdata = Xtest, type = "prob")
 print(tr0_auc <- auc(response = ytest, predictor = tr0_pred_prob[,2]))
 
+# ====
 
 glm0 <- glm(data = cbind(Xtrain, ytrain), ytrain ~., family = binomial(link = "logit"))
 summary(glm0)
