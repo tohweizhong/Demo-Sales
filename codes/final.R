@@ -1,0 +1,149 @@
+
+library(caret)
+library(rpart)
+library(rpart.plot)
+library(pROC)
+library(Metrics)
+
+Xtt <- read.csv("data/student-mat.csv", header = TRUE, stringsAsFactors = TRUE, sep = ";")
+save(list = "Xtt", file = "data/Xtt.RData")
+
+# Should be factors
+be_factors <- c("Medu", "Fedu", "famrel", "goout", "Dalc", "Walc", "health")
+for(i in seq(ncol(Xtt))){
+    if(colnames(Xtt)[i] %in% be_factors){
+        Xtt[,i] <- factor(Xtt[,i])
+    }
+}
+
+actionable_vars <- c("studytime", "schoolsup", "famsup", "activities", "Dalc", "absences", "paid", "freetime")
+static_vars <- setdiff(colnames(Xtt), actionable_vars)
+save(list = c("actionable_vars", "static_vars"), file = "data/vars.RData")
+
+# Required response variables:
+# @ G1_cate
+# @ G2
+# @ G3MinusG2 (students who failed G2 or G1)
+
+# G1_cate
+Xtt$G1_cate <- unlist(sapply(Xtt$G1, function(x){
+    if(x <= 10) return("Fail")
+    else return("Pass")
+}))
+Xtt$G1_cate <- factor(Xtt$G1_cate)
+
+# G3MinusG2
+Xtt$G3MinusG2 <- Xtt$G3 - Xtt$G2
+
+write.csv(Xtt, "data/Xtt.csv", row.names = FALSE)
+
+# ====
+# Prep for cross-validation
+
+set.seed(86647)
+
+# G1_cate
+# Remove students who didnt take G1
+r <- which(Xtt$G1 > 0)
+Xtt_took_G1 <- Xtt[r,]
+
+tr_idx          <- createDataPartition(Xtt_took_G1$G1_cate, p = 0.7, list = FALSE)
+Xtrain_G1       <- Xtt_took_G1[ tr_idx,]
+Xtest_G1        <- Xtt_took_G1[-tr_idx,]
+ytrain_G1       <- Xtrain_G1$G1_cate
+ytest_G1        <- Xtest_G1$G1_cate
+Xtrain_G1       <- subset(Xtrain_G1, select = -c(G1, G1_cate, G2, G3, G3MinusG2))
+Xtest_G1        <- subset(Xtest_G1, select = -c(G1, G1_cate, G2, G3, G3MinusG2))
+
+# G2
+# Remove students who didnt take G2 and G1
+r <- which(Xtt$G1 > 0)
+#r <- intersect(r, which(Xtt$G2 > 0))
+Xtt_took_both <- Xtt[r,]
+
+tr_idx          <- createDataPartition(Xtt_took_both$G2, p = 0.7, list = FALSE)
+Xtrain_G2       <- Xtt_took_both[ tr_idx,]
+Xtest_G2        <- Xtt_took_both[-tr_idx,]
+ytrain_G2       <- Xtrain_G2$G2
+ytest_G2        <- Xtest_G2$G2
+Xtrain_G2       <- subset(Xtrain_G2, select = -c(G2, G3, G3MinusG2))
+Xtest_G2        <- subset(Xtest_G2, select = -c(G2, G3, G3MinusG2))
+
+# G3 (students who failed either G1 or G2)
+# Also remove students who did not take the last exam (presumably G3 == 0)
+# r <- which(Xtt$G2 < 10)
+# r <- union(r, which(Xtt$G1 < 10))
+r <- seq(1:nrow(Xtt))
+r <- intersect(r, which(Xtt$G2 != 0))
+#r <- intersect(r, which(Xtt$G3 != 0))
+Xtt_fail <- Xtt[r,]
+
+tr_idx          <- createDataPartition(Xtt_fail$G3MinusG2, p = 0.85, list = FALSE)
+Xtrain_G3       <- Xtt_fail[ tr_idx,]
+Xtest_G3        <- Xtt_fail[-tr_idx,]
+ytrain_G3       <- Xtrain_G3$G3MinusG2
+ytest_G3        <- Xtest_G3$G3MinusG2
+Xtrain_G3       <- subset(Xtrain_G3, select = -c(G3, G3MinusG2))
+Xtest_G3        <- subset(Xtest_G3, select = -c(G3, G3MinusG2))
+
+save(list = c("Xtrain_G3", "Xtest_G3", "ytrain_G3", "ytest_G3"), file = "data/G3.RData")
+save(list = c("Xtrain_G2", "Xtest_G2", "ytrain_G2", "ytest_G2"), file = "data/G2.RData")
+save(list = c("Xtrain_G1", "Xtest_G1", "ytrain_G1", "ytest_G1"), file = "data/G1.RData")
+
+
+# ====
+# Three models
+# @ tr0_G1
+# @ tr0_G2
+# @ lm0_G3
+
+# tr0_G1
+tr0_G1 <- rpart(data = cbind(Xtrain_G1, ytrain_G1), ytrain_G1 ~.)
+save(list = "tr0_G1", file = "models/tr0_G1.RData")
+
+rpart.plot(tr0_G1)
+
+tr0_G1_pred_class <- predict(tr0_G1, newdata = Xtest_G1, type = "class")
+print(tr0_G1_tb <- table(tr0_G1_pred_class, ytest_G1))
+print(tr0_G1_acc <- sum(diag(tr0_G1_tb)) / sum(tr0_G1_tb))
+
+tr0_G1_pred_prob <- predict(tr0_G1, newdata = Xtest_G1, type = "prob")
+print(tr0_G1_auc <- pROC::auc(response = ytest_G1, predictor = tr0_G1_pred_prob[,2]))
+
+# tr0_G2
+tr0_G2 <- rpart(data = cbind(Xtrain_G2, ytrain_G2), ytrain_G2 ~.)
+save(list = "tr0_G2", file = "models/tr0_G2.RData")
+rpart.plot(tr0_G2)
+
+tr0_G2_pred <- predict(tr0_G2, newdata = Xtest_G2)
+rmse(actual = ytest_G2, predicted = tr0_G2_pred)
+plot(ytest_G2 ~ tr0_G2_pred)
+abline(a = 0, b = 1)
+#abline(h = 10, v = 10)
+
+# lm0_G3
+#foo <- OneHotEncode(Xtrain_G3, type = "test")
+
+lm0_G3 <- lm(data = cbind(Xtrain_G3, ytrain_G3), ytrain_G3 ~.)
+save(list = "lm0_G3", file = "models/lm0_G3.RData")
+summary(lm0_G3)
+
+
+lm0_G3_pred <- predict(lm0_G3, newdata = Xtest_G3)
+rmse(actual = ytest_G3, predicted = lm0_G3_pred)
+
+print(anova(lm0_G3))
+plot(ytest_G3 ~ lm0_G3_pred)
+abline(a = 0, b = 1)
+#abline(h = 0)
+#abline(v = 0)
+
+# ====
+
+
+knn0 <- knn.reg(train = OneHotEncode(Xtrain_G3, type = "test"),
+                test = OneHotEncode(Xtest_G3, type = "test"),
+                y = ytrain_G3)
+rmse(actual = ytest_G3, predicted = as.numeric(knn0$pred))
+
+plot(ytest_G3 ~ as.numeric(knn0$pred))
