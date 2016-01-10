@@ -71,20 +71,24 @@ Xtest_G2        <- subset(Xtest_G2, select = -c(G2, G3, G3MinusG2))
 
 # G3 (students who failed either G1 or G2)
 # Also remove students who did not take the last exam (presumably G3 == 0)
-# r <- which(Xtt$G2 < 10)
-# r <- union(r, which(Xtt$G1 < 10))
-r <- seq(1:nrow(Xtt))
+ r <- which(Xtt$G2 < 10)
+ r <- union(r, which(Xtt$G1 < 10))
+#r <- seq(1:nrow(Xtt))
 r <- intersect(r, which(Xtt$G2 != 0))
-#r <- intersect(r, which(Xtt$G3 != 0))
+r <- intersect(r, which(Xtt$G3 != 0))
 Xtt_fail <- Xtt[r,]
+
+# Only use some variables
+lm0_G3_vars <- c("absences", "failures", "G1", "G2", "traveltime", "studytime", "G3MinusG2")
+Xtt_fail <- Xtt_fail[,lm0_G3_vars]
 
 tr_idx          <- createDataPartition(Xtt_fail$G3MinusG2, p = 0.85, list = FALSE)
 Xtrain_G3       <- Xtt_fail[ tr_idx,]
 Xtest_G3        <- Xtt_fail[-tr_idx,]
 ytrain_G3       <- Xtrain_G3$G3MinusG2
 ytest_G3        <- Xtest_G3$G3MinusG2
-Xtrain_G3       <- subset(Xtrain_G3, select = -c(G3, G3MinusG2))
-Xtest_G3        <- subset(Xtest_G3, select = -c(G3, G3MinusG2))
+Xtrain_G3       <- subset(Xtrain_G3, select = -c(G3MinusG2))
+Xtest_G3        <- subset(Xtest_G3, select = -c(G3MinusG2))
 
 save(list = c("Xtrain_G3", "Xtest_G3", "ytrain_G3", "ytest_G3"), file = "data/G3.RData")
 save(list = c("Xtrain_G2", "Xtest_G2", "ytrain_G2", "ytest_G2"), file = "data/G2.RData")
@@ -113,21 +117,19 @@ print(tr0_G1_auc <- pROC::auc(response = ytest_G1, predictor = tr0_G1_pred_prob[
 # tr0_G2
 tr0_G2 <- rpart(data = cbind(Xtrain_G2, ytrain_G2), ytrain_G2 ~.)
 save(list = "tr0_G2", file = "models/tr0_G2.RData")
+
 rpart.plot(tr0_G2)
 
 tr0_G2_pred <- predict(tr0_G2, newdata = Xtest_G2)
 rmse(actual = ytest_G2, predicted = tr0_G2_pred)
 plot(ytest_G2 ~ tr0_G2_pred)
 abline(a = 0, b = 1)
-#abline(h = 10, v = 10)
 
 # lm0_G3
-#foo <- OneHotEncode(Xtrain_G3, type = "test")
-
 lm0_G3 <- lm(data = cbind(Xtrain_G3, ytrain_G3), ytrain_G3 ~.)
 save(list = "lm0_G3", file = "models/lm0_G3.RData")
-summary(lm0_G3)
 
+summary(lm0_G3)
 
 lm0_G3_pred <- predict(lm0_G3, newdata = Xtest_G3)
 rmse(actual = ytest_G3, predicted = lm0_G3_pred)
@@ -135,8 +137,6 @@ rmse(actual = ytest_G3, predicted = lm0_G3_pred)
 print(anova(lm0_G3))
 plot(ytest_G3 ~ lm0_G3_pred)
 abline(a = 0, b = 1)
-#abline(h = 0)
-#abline(v = 0)
 
 # ====
 

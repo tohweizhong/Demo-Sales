@@ -7,6 +7,7 @@ library(rpart)
 library(rpart.plot)
 library(pROC)
 library(Metrics)
+library(DT)
 
 # data
 load("C:/Users/weizhong/Documents/R/Demo-Sales/data/Xtt.RData")
