@@ -16,7 +16,7 @@ for(i in seq(ncol(Xtt))){
     }
 }
 
-actionable_vars <- c("studytime", "schoolsup", "famsup", "activities", "Dalc", "absences", "paid", "freetime")
+actionable_vars <- c("studytime", "schoolsup", "famsup", "activities", "Dalc", "absences", "paid", "traveltime", "freetime")
 static_vars <- setdiff(colnames(Xtt), actionable_vars)
 save(list = c("actionable_vars", "static_vars"), file = "data/vars.RData")
 
@@ -79,7 +79,10 @@ r <- intersect(r, which(Xtt$G3 != 0))
 Xtt_fail <- Xtt[r,]
 
 # Only use some variables
-lm0_G3_vars <- c("absences", "failures", "G1", "G2", "traveltime", "studytime", "G3MinusG2")
+lm0_G3_vars <- c("absences", "failures", "G1", "G2", "studytime",
+                 "paid", "schoolsup", "activities", "G3MinusG2")
+# lm0_G3_vars <- union(lm0_G3_vars, actionable_vars)
+#lm0_G3_vars <- c()
 Xtt_fail <- Xtt_fail[,lm0_G3_vars]
 
 tr_idx          <- createDataPartition(Xtt_fail$G3MinusG2, p = 0.85, list = FALSE)
@@ -141,9 +144,9 @@ abline(a = 0, b = 1)
 # ====
 
 
-knn0 <- knn.reg(train = OneHotEncode(Xtrain_G3, type = "test"),
-                test = OneHotEncode(Xtest_G3, type = "test"),
-                y = ytrain_G3)
-rmse(actual = ytest_G3, predicted = as.numeric(knn0$pred))
-
-plot(ytest_G3 ~ as.numeric(knn0$pred))
+# knn0 <- knn.reg(train = OneHotEncode(Xtrain_G3, type = "test"),
+#                 test = OneHotEncode(Xtest_G3, type = "test"),
+#                 y = ytrain_G3)
+# rmse(actual = ytest_G3, predicted = as.numeric(knn0$pred))
+# 
+# plot(ytest_G3 ~ as.numeric(knn0$pred))

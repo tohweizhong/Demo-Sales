@@ -42,7 +42,7 @@ shinyUI(fluidPage(
                          tabPanel("Predicting G2 (actual scores)",
                                   plotOutput("plot_tr0_G2"),
                                   plotOutput("plot_tr0_G2_pred")),
-                         tabPanel("Predicting improvements in G3",
+                         tabPanel("Predicting improvements in G3 (students who failed either G1 or G2 or both)",
                                   plotOutput("plot_lm0_G3_beta"),
                                   plotOutput("plot_lm0_G3_anova"),
                                   plotOutput("plot_lm0_G3_pred"))
@@ -54,27 +54,43 @@ shinyUI(fluidPage(
                      tags$br(),
                      sidebarLayout(
                          sidebarPanel(
-                             selectInput("absences",
-                                         label = "Number of days absences in the previous year",
-                                         choices = sort(unique(Xtt$absences))),
+                             h4("Static variables"),
                              selectInput("failures",
                                          label = "Past failures",
                                          choices = sort(unique(Xtt$failures))),
-#                              selectInput("G1",
-#                                          label = "G1 score",
-#                                          choices = sort(unique(Xtt$G1))),
-#                              selectInput("G2",
-#                                          label = "G2 score",
-#                                          choices = sort(unique(Xtt$G2))),
-                             selectInput("traveltime",
-                                         label = "Travel time to school",
-                                         choices = sort(unique(Xtt$traveltime))),
+                             selectInput("G1",
+                                         label = "G1 score",
+                                         choices = 1:9),
+                             selectInput("G2",
+                                         label = "G2 score",
+                                         choices = 1:9),
                              selectInput("studytime",
                                          label = "Amount of studying time",
-                                         choices = sort(unique(Xtt$studytime)))
+                                         choices = sort(unique(Xtt$studytime))),
+                             tags$h4("Actionable variables"),
+                             selectInput("absences",
+                                         label = "Number of days absences in the previous year",
+                                         choices = sort(unique(Xtt$absences))),
+                             selectInput("paid",
+                                         label = "Is student having extra tuition lessons?",
+                                         choices = c("yes", "no")),
+                             selectInput("schoolsup",
+                                         label = "Is the school subsidizes the student's education?",
+                                         choices = c("yes", "no")),
+                             selectInput("activities",
+                                         label = "Is the student participating in CCAs?",
+                                         choices = c("yes", "no"))
+                             #                              selectInput("traveltime",
+                             #                                          label = "Travel time to school",
+                             #                                          choices = sort(unique(Xtt$traveltime))),
+                             #                              selectInput("freetime",
+                             #                                          label = "Amount of free time",
+                             
+                             
                          ),
                          mainPanel(
-                             plotOutput("prescriptive")
+                             verbatimTextOutput("prescriptive_text"),
+                             plotOutput("prescriptive_plot")
                          )
                      )
             )

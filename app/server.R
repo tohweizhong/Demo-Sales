@@ -70,52 +70,43 @@ shinyServer(function(input, output, session){
     })
     
     # Prescriptive
-    output$prescriptive <- renderPlot({
-        
-        newdata <- data.frame(as.numeric(input$failures),
-                              as.numeric(input$absences),
-                              as.numeric(input$traveltime),
-                              as.numeric(input$studytime))
-        str(newdata)
-        
-        
-        G1 <- seq(0, 20, by = 1)
-        G2 <- seq(0, 20, by = 1)
-        
-        df <- NULL
-        for(g_one in G1){
-            for(g_two in G2){
-                v <- unlist(c(newdata[1,1:4], g_one, g_two))
-                #str(v)
-                df <- rbind(df, v)
-            }
-        }
-        newdata <- data.frame(df)
-        colnames(newdata) <- c("failures", "absences", "traveltime", "studytime", "G1", "G2")
-        
+    output$prescriptive_text <- renderText({
+        newdata <- data.frame(as.numeric(input$absences),
+                              as.numeric(input$failures),
+                              as.numeric(input$G1),
+                              as.numeric(input$G2),
+                              as.numeric(input$studytime),
+                              as.factor(input$paid),
+                              as.factor(input$schoolsup),
+                              as.factor(input$activities))
+        colnames(newdata) <- c("absences", "failures", "G1", "G2",
+                               "studytime", "paid", "schoolsup", "activities")
         
         lm0_G3_pred <- predict(lm0_G3, newdata = newdata)
-        
-        plot(lm0_G3_pred ~ newdata$G2)
-        
-        
-        #rmse(actual = ytest_G3, predicted = lm0_G3_pred)
-        
-        #print(anova(lm0_G3))
-        #plot(lm0_G3_pred)
-        #abline(a = 0, b = 1)
-        
-        
-        #plot(newdata)
-        
-                         
+        return(paste0("Student is predicted to make an improvement of ",
+                      round(as.numeric(lm0_G3_pred), 1),
+                      " in G3 relative to G2"))
     })
-        output$actionable_vars <- renderTable({
-            df <- data.frame(t(actionable_vars))
-            colnames(df) <- NULL
-            df
-        })
-        output$static_vars <- renderTable({
-            data.frame(static_vars)
-        })
+    
+    output$prescriptive_plot <- renderPlot({
+        
+        newdata <- data.frame(as.numeric(input$absences),
+                              as.numeric(input$failures),
+                              as.numeric(input$G1),
+                              as.numeric(input$G2),
+                              as.numeric(input$studytime),
+                              as.factor(input$paid),
+                              as.factor(input$schoolsup),
+                              as.factor(input$activities))
+        colnames(newdata) <- c("absences", "failures", "G1", "G2",
+                               "studytime", "paid", "schoolsup", "activities")
+        
+        lm0_G3_pred <- as.numeric(predict(lm0_G3, newdata = newdata))
+        
+        betas <- summary(lm0_G3)$coefficients[c("absences", "paidyes", "schoolsupyes", "activitiesyes"),1]
+        
+        after_action <- rep(lm0_G3_pred, 4) + betas
+        
+        betas
+    })
 })
