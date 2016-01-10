@@ -1,7 +1,7 @@
 
 # ui.R
 
-source("C:/Users/weizhong/Documents/R/Demo-Sales/codes/load.R")
+source("C:/Users/Toh Wei Zhong/Documents/R/Demo-Sales/codes/load.R")
 
 shinyUI(fluidPage(
     
@@ -57,29 +57,37 @@ shinyUI(fluidPage(
                              h4("Static variables"),
                              selectInput("failures",
                                          label = "Past failures",
-                                         choices = sort(unique(Xtt$failures))),
+                                         choices = sort(unique(Xtt$failures)),
+                                         selected = "3"),
                              selectInput("G1",
                                          label = "G1 score",
-                                         choices = 1:9),
+                                         choices = 1:9,
+                                         selected = "9"),
                              selectInput("G2",
                                          label = "G2 score",
-                                         choices = 1:9),
+                                         choices = 1:9,
+                                         selected = "2"),
                              selectInput("studytime",
                                          label = "Amount of studying time",
-                                         choices = sort(unique(Xtt$studytime))),
+                                         choices = sort(unique(Xtt$studytime)),
+                                         selected = "4"),
                              tags$h4("Actionable variables"),
                              selectInput("absences",
                                          label = "Number of days absences in the previous year",
-                                         choices = sort(unique(Xtt$absences))),
-                             selectInput("paid",
-                                         label = "Is student having extra tuition lessons?",
-                                         choices = c("yes", "no")),
-                             selectInput("schoolsup",
+                                         choices = sort(unique(Xtt$absences)),
+                                         selected = "10"),
+                             selectInput("Dalc",
+                                         label = "Level of alcohol consumption",
+                                         choices = c(1, 2, 3, 4, 5),
+                                         selected = "5"),
+                             selectInput("famsup",
                                          label = "Is the school subsidizes the student's education?",
-                                         choices = c("yes", "no")),
+                                         choices = c("yes", "no"),
+                                         selected = "no"),
                              selectInput("activities",
                                          label = "Is the student participating in CCAs?",
-                                         choices = c("yes", "no"))
+                                         choices = c("yes", "no"),
+                                         selected = "yes")
                              #                              selectInput("traveltime",
                              #                                          label = "Travel time to school",
                              #                                          choices = sort(unique(Xtt$traveltime))),
@@ -90,7 +98,23 @@ shinyUI(fluidPage(
                          ),
                          mainPanel(
                              verbatimTextOutput("prescriptive_text"),
-                             plotOutput("prescriptive_plot")
+                             selectInput("absences_improv",
+                                         label = "What if number of days absent is changed to:",
+                                         choices = sort(unique(Xtt$absences)),
+                                         selected = "5"),
+                             selectInput("Dalc_improv",
+                                         label = "What if level of alcohol consumption is changed to:",
+                                         choices = c(1, 2, 3, 4, 5),
+                                         selected = "1"),
+                             selectInput("famsup_improv",
+                                         label = "What if the school changes the student's education subsidy to:",
+                                         choices = c("yes", "no"),
+                                         selected = "yes"),
+                             selectInput("activities_improv",
+                                         label = "What if the student CCA participation is changed to:",
+                                         choices = c("yes", "no"),
+                                         selected = "no"),
+                             plotOutput("prescriptive_plot", width = "100%", height = "500px")
                          )
                      )
             )

@@ -9,12 +9,12 @@ Xtt <- read.csv("data/student-mat.csv", header = TRUE, stringsAsFactors = TRUE, 
 save(list = "Xtt", file = "data/Xtt.RData")
 
 # Should be factors
-be_factors <- c("Medu", "Fedu", "famrel", "goout", "Dalc", "Walc", "health")
-for(i in seq(ncol(Xtt))){
-    if(colnames(Xtt)[i] %in% be_factors){
-        Xtt[,i] <- factor(Xtt[,i])
-    }
-}
+# be_factors <- c("Medu", "Fedu", "famrel", "goout", "Dalc", "Walc", "health")
+# for(i in seq(ncol(Xtt))){
+#     if(colnames(Xtt)[i] %in% be_factors){
+#         Xtt[,i] <- factor(Xtt[,i])
+#     }
+# }
 
 actionable_vars <- c("studytime", "schoolsup", "famsup", "activities", "Dalc", "absences", "paid", "traveltime", "freetime")
 static_vars <- setdiff(colnames(Xtt), actionable_vars)
@@ -71,16 +71,16 @@ Xtest_G2        <- subset(Xtest_G2, select = -c(G2, G3, G3MinusG2))
 
 # G3 (students who failed either G1 or G2)
 # Also remove students who did not take the last exam (presumably G3 == 0)
- r <- which(Xtt$G2 < 10)
- r <- union(r, which(Xtt$G1 < 10))
-#r <- seq(1:nrow(Xtt))
+r <- seq(1:nrow(Xtt))
+r <- union(r, which(Xtt$G2 < 10))
+r <- union(r, which(Xtt$G1 < 10))
 r <- intersect(r, which(Xtt$G2 != 0))
 r <- intersect(r, which(Xtt$G3 != 0))
 Xtt_fail <- Xtt[r,]
 
 # Only use some variables
 lm0_G3_vars <- c("absences", "failures", "G1", "G2", "studytime",
-                 "paid", "schoolsup", "activities", "G3MinusG2")
+                 "activities", "famsup", "Dalc", "G3MinusG2")
 # lm0_G3_vars <- union(lm0_G3_vars, actionable_vars)
 #lm0_G3_vars <- c()
 Xtt_fail <- Xtt_fail[,lm0_G3_vars]
@@ -130,9 +130,10 @@ abline(a = 0, b = 1)
 
 # lm0_G3
 lm0_G3 <- lm(data = cbind(Xtrain_G3, ytrain_G3), ytrain_G3 ~.)
+summary(lm0_G3)
+
 save(list = "lm0_G3", file = "models/lm0_G3.RData")
 
-summary(lm0_G3)
 
 lm0_G3_pred <- predict(lm0_G3, newdata = Xtest_G3)
 rmse(actual = ytest_G3, predicted = lm0_G3_pred)

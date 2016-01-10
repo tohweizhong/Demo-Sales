@@ -76,15 +76,15 @@ shinyServer(function(input, output, session){
                               as.numeric(input$G1),
                               as.numeric(input$G2),
                               as.numeric(input$studytime),
-                              as.factor(input$paid),
-                              as.factor(input$schoolsup),
+                              as.numeric(input$Dalc),
+                              as.factor(input$famsup),
                               as.factor(input$activities))
         colnames(newdata) <- c("absences", "failures", "G1", "G2",
-                               "studytime", "paid", "schoolsup", "activities")
+                               "studytime", "Dalc", "famsup", "activities")
         
         lm0_G3_pred <- predict(lm0_G3, newdata = newdata)
         return(paste0("Student is predicted to make an improvement of ",
-                      round(as.numeric(lm0_G3_pred), 1),
+                      round(as.numeric(lm0_G3_pred), 2),
                       " in G3 relative to G2"))
     })
     
@@ -95,18 +95,40 @@ shinyServer(function(input, output, session){
                               as.numeric(input$G1),
                               as.numeric(input$G2),
                               as.numeric(input$studytime),
-                              as.factor(input$paid),
-                              as.factor(input$schoolsup),
+                              as.numeric(input$Dalc),
+                              as.factor(input$famsup),
                               as.factor(input$activities))
         colnames(newdata) <- c("absences", "failures", "G1", "G2",
-                               "studytime", "paid", "schoolsup", "activities")
+                               "studytime", "Dalc", "famsup", "activities")
         
         lm0_G3_pred <- as.numeric(predict(lm0_G3, newdata = newdata))
+        betas <- summary(lm0_G3)$coefficients[c("absences", "Dalc", "famsupyes", "activitiesyes"),1]
         
-        betas <- summary(lm0_G3)$coefficients[c("absences", "paidyes", "schoolsupyes", "activitiesyes"),1]
+        improv <- c(input$absences_improv, input$Dalc_improv, input$famsup_improv, input$activities_improv)
+        diff <- as.numeric(as.numeric(improv[1:2]) - newdata[,c(1,6)])
         
-        after_action <- rep(lm0_G3_pred, 4) + betas
+        if(input$famsup == input$famsup_improv)
+            diff <- c(diff, 0)
+        else if(input$famsup != input$famsup_improv && input$famsup == "yes")
+            diff <- c(diff, -1)
+        else if(input$famsup != input$famsup_improv && input$famsup == "no")
+            diff <- c(diff, 1)
         
-        betas
+        if(input$activities == input$activities_improv)
+            diff <- c(diff, 0)
+        else if(input$activities != input$activities_improv && input$activities == "yes")
+            diff <- c(diff, -1)
+        else if(input$activities != input$activities_improv && input$activities == "no")
+            diff <- c(diff, 1)
+        
+        after_one_action <- lm0_G3_pred + diff*betas
+        after_all_actions <- lm0_G3_pred + sum(diff*betas)
+        
+        
+        barplot(c(lm0_G3_pred, after_one_action, after_all_actions), ylim = c(0, 1.5),
+                names.arg = c("Predicted", "Absences",
+                             "Alcohol", "Subsidies", "CCA",
+                             "All"),
+                horiz = FALSE, las = 2)
     })
 })
