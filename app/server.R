@@ -49,23 +49,23 @@ shinyServer(function(input, output, session){
     output$plot_tr0_G2_pred <- renderPlot({
         tr0_G2_pred <- predict(tr0_G2, newdata = Xtest_G2)
         rmse(actual = ytest_G2, predicted = tr0_G2_pred)
-        plot(ytest_G2 ~ tr0_G2_pred, main = "Actual G2 vs. predicted G2")
+        plot(ytest_G2 ~ tr0_G2_pred, main = "Actual G2 vs. predicted G2", xlab = "Predicted G2", ylab = "Actual G2")
         abline(a = 0, b = 1)
     })
     output$plot_lm0_G3_beta <- renderPlot({
-        barplot(summary(lm0_G3)$coefficients[-1,1], main = "Model coefficients")
+        barplot(summary(lm0_G3)$coefficients[-1,1], main = "Model coefficients", las = 2)
     })
     output$plot_lm0_G3_anova <- renderPlot({
         an <- anova(lm0_G3)
         barplot(an$"Sum Sq"[-nrow(an)], main = "Variable importances for predicting G3 improvements",
-                names.arg = rownames(an)[-nrow(an)])
+                names.arg = rownames(an)[-nrow(an)], las = 2)
     })
     output$plot_lm0_G3_pred <- renderPlot({
         lm0_G3_pred <- predict(lm0_G3, newdata = Xtest_G3)
         rmse(actual = ytest_G3, predicted = lm0_G3_pred)
         
         print(anova(lm0_G3))
-        plot(ytest_G3 ~ lm0_G3_pred, main = "Actual improvements in G3 vs. predicted improvements")
+        plot(ytest_G3 ~ lm0_G3_pred, main = "Actual improvements in G3 vs. predicted improvements", xlab = "Predicted improvements", ylab = "Actual improvements")
         abline(a = 0, b = 1)
     })
     
@@ -125,7 +125,7 @@ shinyServer(function(input, output, session){
         after_all_actions <- lm0_G3_pred + sum(diff*betas)
         
         
-        barplot(c(lm0_G3_pred, after_one_action, after_all_actions), ylim = c(0, 1.5),
+        barplot(c(lm0_G3_pred, after_one_action, after_all_actions), ylim = c(0, 10),
                 names.arg = c("Predicted", "Absences",
                              "Alcohol", "Subsidies", "CCA",
                              "All"),

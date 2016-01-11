@@ -1,7 +1,7 @@
 
 # ui.R
 
-source("C:/Users/Toh Wei Zhong/Documents/R/Demo-Sales/codes/load.R")
+source("C:/Users/weizhong/Documents/R/Demo-Sales/codes/load.R")
 
 shinyUI(fluidPage(
     
@@ -21,10 +21,10 @@ shinyUI(fluidPage(
                          sidebarPanel(
                              selectInput("var1",
                                          label = "Which variable?",
-                                         choices = colnames(Xtt)),
+                                         choices = c("G1", "G2", "G3")),
                              selectInput("var2",
                                          label = "And which variable?",
-                                         choices = colnames(Xtt))
+                                         choices = colnames(subset(Xtt, select = -c(G1, G2, G3))))
                          ),
                          mainPanel(
                              plotOutput("plot_1var"),
@@ -61,12 +61,12 @@ shinyUI(fluidPage(
                                          selected = "3"),
                              selectInput("G1",
                                          label = "G1 score",
-                                         choices = 1:9,
-                                         selected = "9"),
+                                         choices = seq(10, 50, by = 10),
+                                         selected = "50"),
                              selectInput("G2",
                                          label = "G2 score",
-                                         choices = 1:9,
-                                         selected = "2"),
+                                         choices = seq(10, 50, by = 10),
+                                         selected = "10"),
                              selectInput("studytime",
                                          label = "Amount of studying time",
                                          choices = sort(unique(Xtt$studytime)),

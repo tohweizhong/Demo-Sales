@@ -6,6 +6,9 @@ library(pROC)
 library(Metrics)
 
 Xtt <- read.csv("data/student-mat.csv", header = TRUE, stringsAsFactors = TRUE, sep = ";")
+Xtt[, c("G1", "G2", "G3")] <- Xtt[, c("G1", "G2", "G3")] * 5
+
+
 save(list = "Xtt", file = "data/Xtt.RData")
 
 # Should be factors
@@ -27,7 +30,7 @@ save(list = c("actionable_vars", "static_vars"), file = "data/vars.RData")
 
 # G1_cate
 Xtt$G1_cate <- unlist(sapply(Xtt$G1, function(x){
-    if(x <= 10) return("Fail")
+    if(x <= 50) return("Fail")
     else return("Pass")
 }))
 Xtt$G1_cate <- factor(Xtt$G1_cate)
@@ -72,8 +75,8 @@ Xtest_G2        <- subset(Xtest_G2, select = -c(G2, G3, G3MinusG2))
 # G3 (students who failed either G1 or G2)
 # Also remove students who did not take the last exam (presumably G3 == 0)
 r <- seq(1:nrow(Xtt))
-r <- union(r, which(Xtt$G2 < 10))
-r <- union(r, which(Xtt$G1 < 10))
+r <- union(r, which(Xtt$G2 < 50))
+r <- union(r, which(Xtt$G1 < 50))
 r <- intersect(r, which(Xtt$G2 != 0))
 r <- intersect(r, which(Xtt$G3 != 0))
 Xtt_fail <- Xtt[r,]
