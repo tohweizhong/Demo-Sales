@@ -7,9 +7,10 @@ library(Metrics)
 
 Xtt <- read.csv("data/student-mat.csv", header = TRUE, stringsAsFactors = TRUE, sep = ";")
 Xtt[, c("G1", "G2", "G3")] <- Xtt[, c("G1", "G2", "G3")] * 5
-
-
 save(list = "Xtt", file = "data/Xtt.RData")
+
+num_vars <- c("age", "failures", "absences", "G1", "G2", "G3")
+cate_vars <- setdiff(colnames(Xtt), num_vars)
 
 # Should be factors
 # be_factors <- c("Medu", "Fedu", "famrel", "goout", "Dalc", "Walc", "health")
@@ -19,9 +20,9 @@ save(list = "Xtt", file = "data/Xtt.RData")
 #     }
 # }
 
-actionable_vars <- c("studytime", "schoolsup", "famsup", "activities", "Dalc", "absences", "paid", "traveltime", "freetime")
+actionable_vars <- c("studytime", "schoolsup", "activities", "Dalc", "absences", "paid", "traveltime", "freetime")
 static_vars <- setdiff(colnames(Xtt), actionable_vars)
-save(list = c("actionable_vars", "static_vars"), file = "data/vars.RData")
+save(list = c("num_vars", "cate_vars", "actionable_vars", "static_vars"), file = "data/vars.RData")
 
 # Required response variables:
 # @ G1_cate
@@ -75,17 +76,21 @@ Xtest_G2        <- subset(Xtest_G2, select = -c(G2, G3, G3MinusG2))
 # G3 (students who failed either G1 or G2)
 # Also remove students who did not take the last exam (presumably G3 == 0)
 r <- seq(1:nrow(Xtt))
-r <- union(r, which(Xtt$G2 < 50))
-r <- union(r, which(Xtt$G1 < 50))
+r <- union(r, which(Xtt$G2 < 60))
+r <- union(r, which(Xtt$G1 < 60))
+r <- intersect(r, which(Xtt$G1 != 0))
 r <- intersect(r, which(Xtt$G2 != 0))
-r <- intersect(r, which(Xtt$G3 != 0))
+#r <- intersect(r, which(Xtt$G3 != 0))
 Xtt_fail <- Xtt[r,]
 
 # Only use some variables
-lm0_G3_vars <- c("absences", "failures", "G1", "G2", "studytime",
-                 "activities", "famsup", "Dalc", "G3MinusG2")
+# lm0_G3_vars <- c("absences", "failures", "G1", "G2", "studytime",
+#                  "activities", "famsup", "Dalc", "G3MinusG2")
+
+lm0_G3_vars <- c("G3MinusG2", "age", "failures", "activities", "famrel", "G1_cate", "G2",
+                 "schoolsup", "paid", "famsup", "romantic")
+
 # lm0_G3_vars <- union(lm0_G3_vars, actionable_vars)
-#lm0_G3_vars <- c()
 Xtt_fail <- Xtt_fail[,lm0_G3_vars]
 
 tr_idx          <- createDataPartition(Xtt_fail$G3MinusG2, p = 0.85, list = FALSE)
@@ -135,22 +140,32 @@ abline(a = 0, b = 1)
 lm0_G3 <- lm(data = cbind(Xtrain_G3, ytrain_G3), ytrain_G3 ~.)
 summary(lm0_G3)
 
-save(list = "lm0_G3", file = "models/lm0_G3.RData")
+save(list = c("lm0_G3", "lm0_G3_vars"), file = "models/lm0_G3.RData")
 
 
 lm0_G3_pred <- predict(lm0_G3, newdata = Xtest_G3)
 rmse(actual = ytest_G3, predicted = lm0_G3_pred)
 
-print(anova(lm0_G3))
+#print(anova(lm0_G3))
 plot(ytest_G3 ~ lm0_G3_pred)
 abline(a = 0, b = 1)
 
 # ====
 
-
-# knn0 <- knn.reg(train = OneHotEncode(Xtrain_G3, type = "test"),
-#                 test = OneHotEncode(Xtest_G3, type = "test"),
-#                 y = ytrain_G3)
-# rmse(actual = ytest_G3, predicted = as.numeric(knn0$pred))
+# # Stepwise regression for G3
+# r <- seq(1:nrow(Xtt))
+# r <- union(r, which(Xtt$G2 < 50))
+# r <- union(r, which(Xtt$G1 < 50))
+# r <- intersect(r, which(Xtt$G1 != 0))
+# r <- intersect(r, which(Xtt$G2 != 0))
+# #r <- intersect(r, which(Xtt$G3 != 0))
+# Xtt_step <- Xtt[r,]
 # 
-# plot(ytest_G3 ~ as.numeric(knn0$pred))
+# Xtt_step <- subset(Xtt, select = -c(G3))
+# step0 <- step(lm(data = Xtt_step, G3MinusG2~.), direction = "both")
+# summary(step0)
+# 
+# # final model
+# mod <- lm(data = Xtt_step, G3MinusG2 ~ age + failures + activities + famrel + G1_cate + G2
+#           + schoolsup + paid + famsup + romantic)
+# summary(mod)
